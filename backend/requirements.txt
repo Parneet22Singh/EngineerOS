@@ -1,0 +1,15 @@
+# Minimum versions; pip resolves the newest compatible build for your Python.
+# (EngineerOS is developed against Python 3.11–3.14.)
+fastapi>=0.115
+uvicorn[standard]>=0.34
+pydantic>=2.10
+pydantic-settings>=2.7
+SQLAlchemy>=2.0.36
+aiosqlite>=0.20
+greenlet>=3.1
+playwright>=1.49
+httpx>=0.28
+beautifulsoup4>=4.12
+lxml>=5.3
+Jinja2>=3.1
+python-multipart>=0.0.20

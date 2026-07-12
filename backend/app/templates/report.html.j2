@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EngineerOS — {{ module_title }} Report — {{ summary.target }}</title>
+<style>
+  :root {
+    --bg: #0b0f19; --panel: #121826; --panel-2: #171f30; --border: #232c40;
+    --text: #e6ebf5; --muted: #94a3b8; --accent: #6366f1;
+    --critical: #ef4444; --high: #f97316; --medium: #eab308; --low: #38bdf8; --info: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 80px; }
+  header.masthead { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .brand { display: flex; align-items: center; gap: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: 12px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 3px; background: linear-gradient(135deg, var(--accent), #a855f7); }
+  h1 { font-size: 26px; margin: 14px 0 6px; font-weight: 700; }
+  h1 a { color: var(--text); text-decoration: none; }
+  .subtle { color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 28px 0; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .card .value { font-size: 30px; font-weight: 700; margin-top: 6px; }
+  .health .value { color: var(--accent); }
+  .sev-bar { display: flex; height: 12px; border-radius: 8px; overflow: hidden; margin: 8px 0 22px; border: 1px solid var(--border); }
+  .sev-bar span { display: block; }
+  .sev-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 30px; font-size: 13px; }
+  .sev-legend .item { display: flex; align-items: center; gap: 7px; }
+  .chip { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  h2 { font-size: 19px; margin: 40px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+  .status-ok { color: #4ade80; } .status-bad { color: var(--high); }
+  .finding { background: var(--panel); border: 1px solid var(--border); border-left-width: 4px; border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+  .finding .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 3px 9px; border-radius: 999px; color: #0b0f19; }
+  .cat { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+  .finding h3 { font-size: 15px; margin: 10px 0 6px; }
+  .finding p { margin: 6px 0; color: #cbd5e1; font-size: 13.5px; }
+  .finding .rec { color: #a7f3d0; }
+  .finding .where { color: var(--muted); font-size: 12px; word-break: break-all; }
+  code { background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+  table.ev { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 12px; display: block; overflow-x: auto; }
+  table.ev th { text-align: left; color: var(--muted); font-weight: 600; padding: 5px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.ev td { padding: 5px 8px; border-bottom: 1px solid var(--border); vertical-align: top; word-break: break-all; }
+  table.ev td code { background: none; border: none; padding: 0; color: #cbd5e1; }
+  .ev-badge { font-weight: 700; }
+  .ev-list { margin: 8px 0 4px; padding-left: 18px; }
+  .ev-list li { color: #cbd5e1; font-size: 12.5px; margin: 3px 0; word-break: break-all; }
+  details.ev-wrap { margin-top: 8px; }
+  details.ev-wrap > summary { cursor: pointer; color: var(--muted); font-size: 12px; user-select: none; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .shot { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--panel); }
+  .shot img { width: 100%; display: block; max-height: 360px; object-fit: cover; object-position: top; }
+  .shot .cap { padding: 8px 10px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+  .empty { color: var(--muted); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="brand"><span class="dot"></span> EngineerOS · {{ module_title }}</div>
+    <h1><a href="{{ summary.target }}">{{ summary.target }}</a></h1>
+    <div class="subtle">
+      Scan <code>{{ scan.id }}</code> ·
+      {% if summary.pages_scanned %}{{ summary.pages_scanned }} pages · {% endif %}
+      {% if summary.actions_performed %}{{ summary.actions_performed }} interactions · {% endif %}
+      generated {{ generated_at }}
+    </div>
+  </header>
+
+  <section class="grid">
+    <div class="card health">
+      <div class="label">Health score</div>
+      <div class="value">{{ summary.health_score }}<span style="font-size:16px;color:var(--muted)">/100</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Total findings</div>
+      <div class="value">{{ total }}</div>
+    </div>
+    {% if summary.pages_scanned %}
+    <div class="card">
+      <div class="label">Pages scanned</div>
+      <div class="value">{{ summary.pages_scanned }}</div>
+    </div>
+    {% endif %}
+    {% if summary.actions_performed %}
+    <div class="card">
+      <div class="label">Interactions</div>
+      <div class="value">{{ summary.actions_performed }}</div>
+    </div>
+    {% endif %}
+    {% if summary.lighthouse and not summary.lighthouse.skipped %}
+    <div class="card">
+      <div class="label">Lighthouse perf</div>
+      <div class="value">{{ summary.lighthouse.performance if summary.lighthouse.performance is not none else '—' }}</div>
+    </div>
+    {% endif %}
+  </section>
+
+  <h2>Severity breakdown</h2>
+  {% set sev = summary.by_severity %}
+  <div class="sev-bar">
+    {% for name in severity_order %}
+      {% if sev[name] %}<span style="flex:{{ sev[name] }};background:{{ severity_colors[name] }}"></span>{% endif %}
+    {% endfor %}
+  </div>
+  <div class="sev-legend">
+    {% for name in severity_order %}
+    <div class="item"><span class="chip" style="background:{{ severity_colors[name] }}"></span>
+      {{ name|capitalize }} · <strong>{{ sev[name] }}</strong></div>
+    {% endfor %}
+  </div>
+
+  {% if summary.lighthouse and not summary.lighthouse.skipped %}
+  <h2>Lighthouse scores (entry page)</h2>
+  <div class="grid">
+    {% for key, val in summary.lighthouse.items() %}
+      {% if val is number %}
+      <div class="card"><div class="label">{{ key|replace('-', ' ')|title }}</div><div class="value">{{ val }}</div></div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if summary.repo %}
+  {% set repo = summary.repo %}
+  <h2>Repository overview</h2>
+  <div class="grid">
+    <div class="card"><div class="label">Files</div><div class="value">{{ repo.total_files }}</div></div>
+    <div class="card"><div class="label">Lines</div><div class="value">{{ "{:,}".format(repo.total_lines) }}</div></div>
+    <div class="card"><div class="label">Size</div><div class="value">{{ repo.size_mb }}<span style="font-size:15px;color:var(--muted)"> MB</span></div></div>
+    <div class="card"><div class="label">Import edges</div><div class="value">{{ repo.graph.edges }}</div></div>
+    <div class="card"><div class="label">Cycles</div><div class="value">{{ repo.graph.cycles }}</div></div>
+  </div>
+  {% if repo.frameworks %}
+  <p><strong>Stack:</strong> {{ repo.frameworks|join(' · ') }}</p>
+  {% endif %}
+
+  <h2>Languages</h2>
+  <table>
+    <thead><tr><th>Language</th><th>Files</th><th>Lines</th><th>Share</th></tr></thead>
+    <tbody>
+    {% for l in repo.languages %}
+      <tr><td>{{ l.name }}</td><td>{{ l.files }}</td><td>{{ "{:,}".format(l.lines) }}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="height:8px;width:{{ l.pct }}%;min-width:2px;max-width:160px;background:var(--accent);border-radius:4px"></div>
+            {{ l.pct }}%
+          </div>
+        </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if repo.entry_points %}
+  <h2>Entry points</h2>
+  <table><tbody>
+    {% for e in repo.entry_points %}<tr><td><code>{{ e }}</code></td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+
+  {% if repo.structure %}
+  <h2>Structure map</h2>
+  <table>
+    <thead><tr><th>Concern</th><th>Where</th></tr></thead>
+    <tbody>
+    {% for cat, paths in repo.structure.items() %}
+      <tr><td style="white-space:nowrap">{{ cat }}</td>
+          <td>{% for p in paths[:6] %}<code>{{ p }}</code>{{ " " }}{% endfor %}
+              {% if paths|length > 6 %}<span class="subtle">+{{ paths|length - 6 }} more</span>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if repo.top_dependencies %}
+  <h2>Dependencies</h2>
+  <table>
+    <thead><tr><th>Manifest</th><th>Count</th><th>Top packages</th></tr></thead>
+    <tbody>
+    {% for manifest, names in repo.top_dependencies.items() %}
+      <tr><td><code>{{ manifest }}</code></td>
+          <td>{{ repo.dependency_counts[manifest] }}</td>
+          <td>{{ names|join(', ') }}{% if repo.dependency_counts[manifest] > names|length %} …{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% endif %}
+
+  {% if summary.api %}
+  {% set api = summary.api %}
+  <h2>API overview</h2>
+  <div class="grid">
+    <div class="card"><div class="label">Endpoints</div><div class="value">{{ api.endpoint_count }}</div></div>
+    <div class="card"><div class="label">Source</div><div class="value" style="font-size:20px">{{ api.source }}</div></div>
+    {% if api.base_url %}<div class="card"><div class="label">Base URL</div><div class="value" style="font-size:15px;word-break:break-all">{{ api.base_url }}</div></div>{% endif %}
+    {% for m, n in api.by_method.items() %}
+    <div class="card"><div class="label">{{ m }}</div><div class="value">{{ n }}</div></div>
+    {% endfor %}
+  </div>
+  {% if api.frameworks %}<p><strong>Frameworks:</strong> {{ api.frameworks|join(' · ') }}</p>{% endif %}
+  {% if api.graphql_operations %}<p><strong>GraphQL operations:</strong> {{ api.graphql_operations|join(', ') }}</p>{% endif %}
+  {% if api.third_party %}<p><strong>Third-party hosts:</strong> {{ api.third_party|join(', ') }}</p>{% endif %}
+
+  <h2>Endpoints</h2>
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>Auth</th>
+      {% if api.source == 'web' %}<th>Host</th><th>Kind</th><th>Status</th><th>Calls</th>
+      {% else %}<th>Framework</th><th>Source</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for e in api.endpoints %}
+      <tr>
+        <td><code>{{ e.method }}</code></td>
+        <td><code>{{ e.path }}</code></td>
+        <td class="{{ 'status-ok' if e.auth not in ('none', '', none) else 'subtle' }}">{{ e.auth }}</td>
+        {% if api.source == 'web' %}
+          <td>{{ e.host }}{% if not e.same_origin %} <span class="subtle">(3rd-party)</span>{% endif %}</td>
+          <td>{{ e.kind }}</td>
+          <td class="{{ 'status-bad' if e.status and e.status >= 400 else 'status-ok' }}">{{ e.status or '—' }}</td>
+          <td>{{ e.count }}</td>
+        {% else %}
+          <td>{{ e.framework }}</td>
+          <td><code class="subtle">{{ e.source }}</code></td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if api.artifacts %}
+  <p class="subtle">Generated artifacts: <code>{{ api.artifacts.openapi }}</code> · <code>{{ api.artifacts.postman }}</code></p>
+  {% endif %}
+  {% endif %}
+
+  {% if summary.knowledge_graph %}
+  {% set kg = summary.knowledge_graph %}
+  <h2>Knowledge graph</h2>
+  <div class="grid">
+    <div class="card"><div class="label">Components</div><div class="value">{{ kg.node_count }}</div></div>
+    <div class="card"><div class="label">Relationships</div><div class="value">{{ kg.edge_count }}</div></div>
+    <div class="card"><div class="label">Cycles</div><div class="value">{{ kg.cycle_count }}</div></div>
+    <div class="card"><div class="label">Summarized</div><div class="value">{{ kg.summarized }}</div></div>
+  </div>
+  {% if kg.frameworks %}<p><strong>Stack:</strong> {{ kg.frameworks|join(' · ') }}</p>{% endif %}
+  {% if kg.ai_provider and kg.ai_provider != 'none' %}
+  <p class="subtle">AI summaries generated via <code>{{ kg.ai_provider }}</code>.</p>
+  {% else %}
+  <p class="subtle">Structure only — no AI provider was configured for component summaries.</p>
+  {% endif %}
+
+  <h2>Key components</h2>
+  <table>
+    <thead><tr><th>Component</th><th>Lang</th><th>In</th><th>Out</th><th>Role (AI)</th></tr></thead>
+    <tbody>
+    {% for c in kg.components %}
+      <tr>
+        <td><code>{{ c.id }}</code></td>
+        <td>{{ c.language }}</td>
+        <td>{{ c.in_degree }}</td>
+        <td>{{ c.out_degree }}</td>
+        <td>{{ c.summary or '—' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if kg.cycles %}
+  <h2>Circular dependencies</h2>
+  <table><tbody>
+    {% for cyc in kg.cycles %}<tr><td><code>{{ cyc|join(' → ') }}</code></td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+  {% if kg.artifact %}<p class="subtle">Full graph: <code>{{ kg.artifact }}</code></p>{% endif %}
+  {% endif %}
+
+  {% if summary.flows %}
+  <h2>Explored flows</h2>
+  <table>
+    <thead><tr><th>Action</th><th>Target</th><th>Result</th></tr></thead>
+    <tbody>
+    {% for fl in summary.flows %}
+      <tr>
+        <td>{{ fl.action }}</td>
+        <td>{{ fl.label }}</td>
+        <td class="{{ 'status-bad' if fl.issue else 'status-ok' }}">{{ fl.result }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if summary.pages %}
+  <h2>Pages</h2>
+  <table>
+    <thead><tr><th>URL</th><th>Status</th><th>Load</th><th>Findings</th></tr></thead>
+    <tbody>
+    {% for p in summary.pages %}
+      <tr>
+        <td>{{ p.url }}{% if p.title %}<br><span class="subtle">{{ p.title }}</span>{% endif %}</td>
+        <td class="{{ 'status-ok' if p.status_code and p.status_code < 400 else 'status-bad' }}">
+          {{ p.status_code or (p.error or '—') }}
+        </td>
+        <td>{{ p.load_ms }} ms</td>
+        <td>{{ p.findings }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h2>Findings</h2>
+  {% if total == 0 %}
+    <p class="empty">No issues detected. 🎉</p>
+  {% endif %}
+  {% for name in severity_order %}
+    {% if grouped.get(name) %}
+      {% for f in grouped[name] %}
+      <div class="finding" style="border-left-color: {{ severity_colors[name] }}">
+        <div class="top">
+          <span class="badge" style="background: {{ severity_colors[name] }}">{{ name }}</span>
+          <span class="cat">{{ f.category }}</span>
+        </div>
+        <h3>{{ f.title }}</h3>
+        {% if f.description %}<p>{{ f.description }}</p>{% endif %}
+        {% if f.recommendation %}<p class="rec">↳ {{ f.recommendation }}</p>{% endif %}
+        {% if f.page_url %}<p class="where">Found on: <code>{{ f.page_url }}</code></p>{% endif %}
+        {% if f.element %}<p class="where">Element: <code>{{ f.element }}</code></p>{% endif %}
+        {% set ev = f.evidence %}
+        {% if ev is mapping %}
+          {% if ev.links %}
+          <table class="ev">
+            <thead><tr><th>Link</th><th>Result</th><th>Found on page(s)</th></tr></thead>
+            <tbody>
+            {% for l in ev.links %}
+              <tr>
+                <td><code>{{ l.url }}</code></td>
+                <td class="ev-badge">{% if l.status %}HTTP {{ l.status }}{% else %}{{ l.reason or 'failed' }}{% endif %}{% if l.redirects and l.redirects > 0 %} · {{ l.redirects }} redirect(s){% endif %}</td>
+                <td>{% for s in l.found_on or [] %}<code>{{ s }}</code>{% if not loop.last %}<br>{% endif %}{% endfor %}{% if not l.found_on %}<span class="where">—</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% elif ev.resources %}
+          <table class="ev">
+            <thead><tr><th>Resource</th><th>Status</th><th>Type</th></tr></thead>
+            <tbody>
+            {% for r in ev.resources %}
+              <tr>
+                <td><code>{{ r.url }}</code></td>
+                <td class="ev-badge">{% if r.status %}HTTP {{ r.status }}{% else %}{{ r.failure or 'failed' }}{% endif %}</td>
+                <td>{{ r.type or r.resource_type or '' }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% elif ev.errors %}
+          <ul class="ev-list">
+            {% for e in ev.errors %}<li>{% if e.type %}<strong>[{{ e.type }}]</strong> {% endif %}{{ e.text if e.text is defined else e }}</li>{% endfor %}
+          </ul>
+          {% else %}
+          <table class="ev"><tbody>
+            {% for k, v in ev.items() %}<tr><td>{{ k }}</td><td><code>{{ v }}</code></td></tr>{% endfor %}
+          </tbody></table>
+          {% endif %}
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+
+  {% if screenshots %}
+  <h2>Screenshots</h2>
+  <div class="shots">
+    {% for s in screenshots %}
+    <div class="shot">
+      <img src="{{ s.data_uri }}" alt="{{ s.viewport }} screenshot of {{ s.page_url }}">
+      <div class="cap"><span>{{ s.label or s.viewport }}</span><span>{{ s.page_url|truncate(40) }}</span></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <footer>
+    Generated by <strong>EngineerOS</strong> — the AI operating system for software engineers.
+    Report ID {{ scan.id }}.
+  </footer>
+</div>
+</body>
+</html>
