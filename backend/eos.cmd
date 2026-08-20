@@ -1,10 +1,11 @@
 @echo off
-rem EngineerOS CLI launcher — sets the Playwright browser path (browsers live on D:)
-rem and runs the CLI with the project venv, from any working directory.
+rem EngineerOS CLI launcher — sets the Playwright browser path and runs the CLI
+rem with the project venv, from any working directory.
 setlocal
-set "PLAYWRIGHT_BROWSERS_PATH=D:\EngineerOS\.ms-playwright"
-set "TEMP=D:\EngineerOS\.tmp"
-set "TMP=D:\EngineerOS\.tmp"
-set "PYTHONPATH=D:\EngineerOS\backend"
-"D:\EngineerOS\backend\.venv\Scripts\python.exe" -m app.cli %*
+set "PROJECT_ROOT=%~dp0"
+set "PLAYWRIGHT_BROWSERS_PATH=%PROJECT_ROOT%.ms-playwright"
+set "TEMP=%PROJECT_ROOT%.tmp"
+set "TMP=%PROJECT_ROOT%.tmp"
+set "PYTHONPATH=%PROJECT_ROOT%backend"
+"%PROJECT_ROOT%backend\.venv\Scripts\python.exe" -m app.cli %*
 endlocal
